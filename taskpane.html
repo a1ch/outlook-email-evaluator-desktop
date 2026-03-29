@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Email Evaluator</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
   <link rel="stylesheet" href="taskpane.css"/>
 </head>
 <body>
@@ -18,8 +18,13 @@
     <!-- Settings Panel -->
     <div id="settings-panel" class="panel hidden">
       <h3>Settings</h3>
-      <label>Anthropic API Key
-        <input type="password" id="api-key-input" placeholder="sk-ant-..."/>
+      <label>Supabase Proxy URL
+        <input type="text" id="proxy-url-input" placeholder="https://xxx.supabase.co/functions/v1/analyze-email"/>
+        <small>Your Supabase edge function URL</small>
+      </label>
+      <label>Extension Token
+        <input type="password" id="ext-token-input" placeholder="Your extension token"/>
+        <small>Must match the token set in your Supabase function</small>
       </label>
       <label>Organization Domain
         <input type="text" id="tenant-domain-input" placeholder="yourcompany.com"/>

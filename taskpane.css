@@ -1,4 +1,4 @@
-﻿* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", sans-serif; font-size: 13px; background: #f5f5f5; color: #1a1a1a; height: 100vh; overflow-y: auto; }
 #app { display: flex; flex-direction: column; height: 100%; }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #0078d4; color: white; position: sticky; top: 0; z-index: 10; }
@@ -24,12 +24,16 @@ header .title { font-weight: 600; font-size: 14px; flex: 1; }
 .spinner { width: 18px; height: 18px; border: 2px solid #ddd; border-top-color: #0078d4; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error { background: #fde7e9; border: 1px solid #e81123; border-radius: 6px; padding: 10px 12px; color: #a80000; font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
+
+/* Verdict */
 .verdict-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; margin-bottom: 12px; font-weight: 700; font-size: 16px; }
 .verdict-icon { font-size: 22px; }
 .verdict-safe { background: #dff6dd; color: #107c10; }
 .verdict-suspicious { background: #fff4ce; color: #8a6914; }
 .verdict-spam { background: #fde7e9; color: #a80000; }
 .verdict-phishing { background: #a80000; color: white; }
+
+/* Scores */
 .scores { display: flex; gap: 10px; margin-bottom: 12px; }
 .score-item { flex: 1; background: white; border: 1px solid #eee; border-radius: 6px; padding: 8px 10px; }
 .score-label { display: block; font-size: 11px; color: #666; margin-bottom: 2px; }
@@ -38,16 +42,59 @@ header .title { font-weight: 600; font-size: 14px; flex: 1; }
 .score-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
 .phishing-fill { background: #e81123; }
 .spam-fill { background: #ff8c00; }
+
+/* Sections */
 .section { background: white; border: 1px solid #eee; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
 .section-title { font-weight: 600; font-size: 12px; color: #0078d4; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
 .section p { font-size: 12px; line-height: 1.5; color: #333; }
-.section ul { padding-left: 16px; }
-.section li { font-size: 12px; line-height: 1.6; color: #333; }
+
+/* Findings */
+.oe-finding { border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
+.oe-finding-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; cursor: pointer; background: #fafafa; user-select: none; }
+.oe-finding-header:hover { background: #f0f0f0; }
+.finding-icon { font-size: 13px; }
+.finding-flag { flex: 1; font-size: 12px; font-weight: 600; color: #1a1a1a; }
+.finding-toggle { font-size: 11px; color: #888; transition: transform 0.2s; }
+.oe-finding-body { display: none; padding: 8px 10px; border-top: 1px solid #eee; }
+.oe-finding.oe-finding-open .oe-finding-body { display: block; }
+.oe-finding.oe-finding-open .finding-toggle { transform: rotate(180deg); }
+.finding-section { margin-bottom: 8px; }
+.finding-section:last-child { margin-bottom: 0; }
+.finding-label { font-size: 11px; font-weight: 600; color: #0078d4; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+.finding-text { font-size: 12px; color: #333; line-height: 1.5; }
+.finding-tip { background: #f0f7ff; border-radius: 4px; padding: 6px 8px; }
+.finding-tip .finding-label { color: #0078d4; }
+
+/* Links */
 .link-item { display: flex; flex-direction: column; padding: 4px 0; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
 .link-item:last-child { border-bottom: none; }
 .link-display { color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .link-domain { color: #0078d4; font-weight: 500; }
 .link-mismatch .link-domain { color: #a80000; font-weight: 700; }
+
+/* Lesson */
+.lesson { background: #fffbe6; border: 1px solid #f7bd37; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+.lesson-title { font-weight: 600; font-size: 12px; color: #8a6914; margin-bottom: 4px; }
+.lesson-text { font-size: 12px; color: #5a4a0a; line-height: 1.5; }
+
+/* Warnings */
 .warning-banner { background: #fff4ce; border: 1px solid #f7bd37; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #8a6914; line-height: 1.5; margin-bottom: 10px; }
 .attach-high-risk { background: #a80000; color: white; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; font-weight: 600; line-height: 1.5; }
 .attach-suspicious { background: #b45309; color: white; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+
+/* Feedback */
+.feedback-section { background: white; border: 1px solid #eee; border-radius: 6px; padding: 10px 12px; margin-top: 10px; }
+.feedback-title { font-size: 12px; font-weight: 600; color: #444; margin-bottom: 8px; }
+.feedback-buttons { display: flex; gap: 8px; }
+.feedback-btn { flex: 1; padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; font-weight: 600; cursor: pointer; background: white; transition: background 0.15s; }
+.fb-false-positive { border-color: #ff8c00; color: #ff8c00; }
+.fb-false-positive:hover { background: #fff4e6; }
+.fb-missed-threat { border-color: #a80000; color: #a80000; }
+.fb-missed-threat:hover { background: #fde7e9; }
+.fb-submit { background: #0078d4; color: white; border-color: #0078d4; }
+.fb-submit:hover { background: #006cbe; }
+.fb-cancel { background: #f5f5f5; color: #444; }
+.fb-cancel:hover { background: #eee; }
+.feedback-comment { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; resize: vertical; margin-bottom: 8px; outline: none; }
+.feedback-comment:focus { border-color: #0078d4; }
+.feedback-actions { display: flex; gap: 8px; }
