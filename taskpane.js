@@ -1,6 +1,19 @@
 ﻿/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.1 */
 
-Office.onReady(() => { initUI(); loadEmail(); });
+Office.onReady(() => {
+  initUI();
+  loadEmail();
+  // Re-load email subject when user switches to a different email (pinned taskpane)
+  try {
+    Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, () => {
+      loadEmail();
+      // Reset UI to ready state for new email
+      const btn = document.getElementById('analyze-btn');
+      if (btn) { btn.disabled = false; btn.textContent = '🔍 Analyze Email'; }
+      document.getElementById('result-body').innerHTML = '<p>Click <strong>Analyze Email</strong> to check this email for threats.</p>';
+    });
+  } catch(e) {}
+});
 
 function storageGet(key) {
   try { return Office.context.roamingSettings.get(key) || ''; }
