@@ -230,7 +230,8 @@ async function analyzeEmail() {
     body: bodyText.slice(0, 3000), links,
     attachments: attachNames, hasHighRiskAttachment: highRisk.length > 0,
     hasSuspiciousAttachment: suspicious.length > 0, highRiskFiles: highRisk,
-    suspiciousFiles: suspicious, isOutlookExternal, clientTimestamp: new Date().toISOString()
+    suspiciousFiles: suspicious, isOutlookExternal, clientTimestamp: new Date().toISOString(),
+    clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   };
 
   try {
