@@ -1,4 +1,4 @@
-/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.1 */
+﻿/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.1 */
 
 Office.onReady(() => { initUI(); loadEmail(); });
 
@@ -222,8 +222,8 @@ async function analyzeEmail() {
   try {
     const response = await fetch(proxyUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-extension-token': extToken },
-      body: JSON.stringify({ emailData, customPrompt, tenantDomain })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: extToken, emailData, customPrompt, tenantDomain })
     });
     if (response.status === 429) { showError('Please wait 5 seconds before analyzing another email.'); return; }
     if (!response.ok) {
@@ -330,8 +330,8 @@ async function submitFeedback(feedbackType, result, comment) {
     const item = Office.context.mailbox.item;
     const response = await fetch(feedbackUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-extension-token': extToken },
-      body: JSON.stringify({ feedbackType, originalVerdict: result.verdict, originalPhishingScore: result.phishing_score, originalSpamScore: result.spam_score, emailSubject: (item.subject || '').slice(0, 200), emailSender: item.from ? item.from.emailAddress.slice(0, 200) : '', userComment: comment })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: extToken, feedbackType, originalVerdict: result.verdict, originalPhishingScore: result.phishing_score, originalSpamScore: result.spam_score, emailSubject: (item.subject || '').slice(0, 200), emailSender: item.from ? item.from.emailAddress.slice(0, 200) : '', userComment: comment })
     });
     section.innerHTML = response.ok
       ? '<div class="feedback-title" style="color:#107c10;">✅ Thank you! Report submitted.</div>'
