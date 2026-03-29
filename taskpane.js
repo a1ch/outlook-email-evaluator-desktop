@@ -1,9 +1,15 @@
-/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.0 */
+/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.1 */
 
 Office.onReady(() => { initUI(); loadEmail(); });
 
-function storageGet(key) { try { return localStorage.getItem(key) || ''; } catch(e) { return ''; } }
-function storageSet(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
+function storageGet(key) {
+  try { return Office.context.roamingSettings.get(key) || ''; }
+  catch(e) { try { return localStorage.getItem(key) || ''; } catch(e2) { return ''; } }
+}
+function storageSet(key, value) {
+  try { Office.context.roamingSettings.set(key, value); Office.context.roamingSettings.saveAsync(); }
+  catch(e) { try { localStorage.setItem(key, value); } catch(e2) {} }
+}
 
 function escapeHtml(s) {
   if (s == null || s === '') return '';
@@ -83,7 +89,6 @@ function classifyAttachments(attachments) {
 function decodeWrappedUrl(href) {
   if (!href) return href;
   try {
-    // Unescape HTML entities that may be present in href attributes
     href = href.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
     if (href.includes('safelinks.protection.outlook.com')) {
       const u = new URL(href);
@@ -177,7 +182,6 @@ async function analyzeEmail() {
   const tenantDomain = storageGet('tenantDomain') || '';
   const customPrompt = storageGet('customPrompt') || '';
 
-  // Detect external sender via domain comparison and optionally internet headers (Mailbox 1.8+)
   let isOutlookExternal = false;
   try {
     const senderEmail = item.from ? item.from.emailAddress.toLowerCase() : '';
@@ -196,18 +200,11 @@ async function analyzeEmail() {
     }
   } catch(e) {}
 
-  // Gift card fraud pre-check — bypass proxy
   if (checkForGiftCardFraud(subject, bodyText)) {
     showResult({
-      verdict: 'PHISHING',
-      phishing_score: 99,
-      spam_score: 10,
+      verdict: 'PHISHING', phishing_score: 99, spam_score: 10,
       summary: 'This email contains a request for gift cards. This is one of the most common fraud tactics used against businesses — it is almost certainly a scam.',
-      findings: [{
-        flag: 'Gift card request detected',
-        explanation: 'Fraudsters impersonate managers, executives, or colleagues and ask employees to buy gift cards urgently. No legitimate business request will ever ask for gift card payments.',
-        howToSpotIt: 'If ANY email asks you to buy gift cards and send the codes — stop immediately. Call that person directly on a known phone number to verify.'
-      }],
+      findings: [{ flag: 'Gift card request detected', explanation: 'Fraudsters impersonate managers, executives, or colleagues and ask employees to buy gift cards urgently. No legitimate business request will ever ask for gift card payments.', howToSpotIt: 'If ANY email asks you to buy gift cards and send the codes — stop immediately. Call that person directly on a known phone number to verify.' }],
       lesson: 'No legitimate business transaction is ever completed with gift cards. If someone asks you to buy gift cards and send the codes, it is a scam — 100% of the time.',
       suggested_action: 'Do NOT purchase any gift cards. Report this email to your IT security team and your manager immediately.'
     }, { subject, links, highRisk, suspicious });
@@ -215,37 +212,25 @@ async function analyzeEmail() {
   }
 
   const emailData = {
-    subject,
-    sender,
-    senderHasEmail: sender.includes('@'),
-    body: bodyText.slice(0, 3000),
-    links,
-    attachments: attachNames,
-    hasHighRiskAttachment: highRisk.length > 0,
-    hasSuspiciousAttachment: suspicious.length > 0,
-    highRiskFiles: highRisk,
-    suspiciousFiles: suspicious,
-    isOutlookExternal,
-    clientTimestamp: new Date().toISOString()
+    subject, sender, senderHasEmail: sender.includes('@'),
+    body: bodyText.slice(0, 3000), links,
+    attachments: attachNames, hasHighRiskAttachment: highRisk.length > 0,
+    hasSuspiciousAttachment: suspicious.length > 0, highRiskFiles: highRisk,
+    suspiciousFiles: suspicious, isOutlookExternal, clientTimestamp: new Date().toISOString()
   };
 
   try {
     const response = await fetch(proxyUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-extension-token': extToken,
-      },
+      headers: { 'Content-Type': 'application/json', 'x-extension-token': extToken },
       body: JSON.stringify({ emailData, customPrompt, tenantDomain })
     });
-
     if (response.status === 429) { showError('Please wait 5 seconds before analyzing another email.'); return; }
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       showError('Proxy error ' + response.status + ': ' + (err.error || response.statusText));
       return;
     }
-
     const data = await response.json();
     window._oe_lastResult = data.result;
     showResult(data.result, { subject, links, highRisk, suspicious });
@@ -296,12 +281,7 @@ function showResult(result, { subject, links, highRisk, suspicious }) {
 
   const linksHTML = links.length > 0
     ? '<div class="section"><div class="section-title">🔗 Links (' + links.length + ')</div>' +
-      links.map(l =>
-        '<div class="link-item' + (l.mismatch ? ' link-mismatch' : '') + '">' +
-        '<span class="link-display">' + escapeHtml(l.display) + '</span>' +
-        '<span class="link-domain">→ ' + escapeHtml(l.href) + (l.mismatch ? ' ⚠️ MISMATCH' : '') + '</span>' +
-        '</div>'
-      ).join('') + '</div>'
+      links.map(l => '<div class="link-item' + (l.mismatch ? ' link-mismatch' : '') + '"><span class="link-display">' + escapeHtml(l.display) + '</span><span class="link-domain">→ ' + escapeHtml(l.href) + (l.mismatch ? ' ⚠️ MISMATCH' : '') + '</span></div>').join('') + '</div>'
     : '';
 
   const attachWarn = highRisk.length > 0
@@ -311,103 +291,59 @@ function showResult(result, { subject, links, highRisk, suspicious }) {
     : '';
 
   const combined = ((subject || '') + ' ' + (result.summary || '')).toLowerCase();
-  const showWarn = ['sign in','verification code','one-time','otp','log in','verify your',
-    'reset your password','confirm your','your account','click here to'].some(kw => combined.includes(kw))
+  const showWarn = ['sign in','verification code','one-time','otp','log in','verify your','reset your password','confirm your','your account','click here to'].some(kw => combined.includes(kw))
     || result.verdict === 'PHISHING' || result.phishing_score >= 60;
 
   document.getElementById('result-body').innerHTML =
     attachWarn +
     '<div class="verdict-card ' + vc + '"><span class="verdict-icon">' + vi + '</span><span class="verdict-label">' + escapeHtml(result.verdict) + '</span></div>' +
-    '<div class="scores">' +
-      '<div class="score-item"><span class="score-label">Phishing Risk</span><span class="score-val">' + escapeHtml(String(result.phishing_score)) + '/100</span><div class="score-bar"><div class="score-fill phishing-fill" style="width:' + result.phishing_score + '%"></div></div></div>' +
-      '<div class="score-item"><span class="score-label">Spam Score</span><span class="score-val">' + escapeHtml(String(result.spam_score)) + '/100</span><div class="score-bar"><div class="score-fill spam-fill" style="width:' + result.spam_score + '%"></div></div></div>' +
-    '</div>' +
+    '<div class="scores"><div class="score-item"><span class="score-label">Phishing Risk</span><span class="score-val">' + escapeHtml(String(result.phishing_score)) + '/100</span><div class="score-bar"><div class="score-fill phishing-fill" style="width:' + result.phishing_score + '%"></div></div></div><div class="score-item"><span class="score-label">Spam Score</span><span class="score-val">' + escapeHtml(String(result.spam_score)) + '/100</span><div class="score-bar"><div class="score-fill spam-fill" style="width:' + result.spam_score + '%"></div></div></div></div>' +
     '<div class="section"><div class="section-title">Summary</div><p>' + escapeHtml(result.summary) + '</p></div>' +
     (showWarn ? '<div class="warning-banner">⚠️ If you did not request this, do not click any links and <strong>report this to your IT security team immediately.</strong></div>' : '') +
     (findingsHTML ? '<div class="section"><div class="section-title">🔍 What We Found — tap each to learn more</div>' + findingsHTML + '</div>' : '') +
     linksHTML +
     (result.lesson ? '<div class="lesson"><div class="lesson-title">📚 Remember for next time</div><div class="lesson-text">' + escapeHtml(result.lesson) + '</div></div>' : '') +
     '<div class="section"><div class="section-title">✅ Suggested Action</div><p>' + escapeHtml(result.suggested_action) + '</p></div>' +
-    '<div class="feedback-section" id="feedback-section">' +
-      '<div class="feedback-title">Was this analysis accurate?</div>' +
-      '<div class="feedback-buttons">' +
-        '<button class="feedback-btn fb-false-positive" id="fb-fp">👎 False Positive</button>' +
-        '<button class="feedback-btn fb-missed-threat" id="fb-mt">🚨 Missed Threat</button>' +
-      '</div>' +
-    '</div>';
+    '<div class="feedback-section" id="feedback-section"><div class="feedback-title">Was this analysis accurate?</div><div class="feedback-buttons"><button class="feedback-btn fb-false-positive" id="fb-fp">👎 False Positive</button><button class="feedback-btn fb-missed-threat" id="fb-mt">🚨 Missed Threat</button></div></div>';
 
   document.getElementById('fb-fp').addEventListener('click', () => showFeedbackForm('false_positive', result));
   document.getElementById('fb-mt').addEventListener('click', () => showFeedbackForm('missed_threat', result));
-
   resetBtn();
 }
 
 function showFeedbackForm(feedbackType, result) {
   const section = document.getElementById('feedback-section');
-  const label = feedbackType === 'false_positive'
-    ? 'This email was flagged but is actually safe'
-    : 'This email is spam or phishing but was not caught';
-  section.innerHTML =
-    '<div class="feedback-title">' + label + '</div>' +
-    '<textarea id="fb-comment" class="feedback-comment" placeholder="Optional: tell us more..." maxlength="500" rows="3"></textarea>' +
-    '<div class="feedback-actions">' +
-      '<button class="feedback-btn fb-submit" id="fb-submit">Send Report</button>' +
-      '<button class="feedback-btn fb-cancel" id="fb-cancel">Cancel</button>' +
-    '</div>';
-  document.getElementById('fb-submit').addEventListener('click', () => {
-    const comment = (document.getElementById('fb-comment').value || '').trim();
-    submitFeedback(feedbackType, result, comment);
-  });
+  const label = feedbackType === 'false_positive' ? 'This email was flagged but is actually safe' : 'This email is spam or phishing but was not caught';
+  section.innerHTML = '<div class="feedback-title">' + label + '</div><textarea id="fb-comment" class="feedback-comment" placeholder="Optional: tell us more..." maxlength="500" rows="3"></textarea><div class="feedback-actions"><button class="feedback-btn fb-submit" id="fb-submit">Send Report</button><button class="feedback-btn fb-cancel" id="fb-cancel">Cancel</button></div>';
+  document.getElementById('fb-submit').addEventListener('click', () => submitFeedback(feedbackType, result, (document.getElementById('fb-comment').value || '').trim()));
   document.getElementById('fb-cancel').addEventListener('click', resetFeedbackSection);
 }
 
 async function submitFeedback(feedbackType, result, comment) {
   const section = document.getElementById('feedback-section');
   section.innerHTML = '<div class="feedback-title" style="text-align:center;"><div class="spinner" style="margin:0 auto 6px;"></div>Sending report...</div>';
-
   const proxyUrl = storageGet('proxyUrl');
   const extToken = storageGet('extToken');
-  if (!proxyUrl || !extToken) {
-    section.innerHTML = '<div class="feedback-title" style="color:#a80000;">Extension not configured.</div>';
-    return;
-  }
-
+  if (!proxyUrl || !extToken) { section.innerHTML = '<div class="feedback-title" style="color:#a80000;">Extension not configured.</div>'; return; }
   const feedbackUrl = proxyUrl.replace(/\/analyze-email\/?$/, '/report-feedback');
   try {
     const item = Office.context.mailbox.item;
     const response = await fetch(feedbackUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-extension-token': extToken },
-      body: JSON.stringify({
-        feedbackType,
-        originalVerdict: result.verdict,
-        originalPhishingScore: result.phishing_score,
-        originalSpamScore: result.spam_score,
-        emailSubject: (item.subject || '').slice(0, 200),
-        emailSender: item.from ? item.from.emailAddress.slice(0, 200) : '',
-        userComment: comment
-      })
+      body: JSON.stringify({ feedbackType, originalVerdict: result.verdict, originalPhishingScore: result.phishing_score, originalSpamScore: result.spam_score, emailSubject: (item.subject || '').slice(0, 200), emailSender: item.from ? item.from.emailAddress.slice(0, 200) : '', userComment: comment })
     });
-    if (response.ok) {
-      section.innerHTML = '<div class="feedback-title" style="color:#107c10;">✅ Thank you! Report submitted.</div>';
-    } else {
-      section.innerHTML = '<div class="feedback-title" style="color:#a80000;">Failed to send. Please try again.</div>';
-    }
-  } catch(e) {
-    section.innerHTML = '<div class="feedback-title" style="color:#a80000;">Failed to send: ' + escapeHtml(e.message) + '</div>';
-  }
+    section.innerHTML = response.ok
+      ? '<div class="feedback-title" style="color:#107c10;">✅ Thank you! Report submitted.</div>'
+      : '<div class="feedback-title" style="color:#a80000;">Failed to send. Please try again.</div>';
+  } catch(e) { section.innerHTML = '<div class="feedback-title" style="color:#a80000;">Failed to send: ' + escapeHtml(e.message) + '</div>'; }
 }
 
 function resetFeedbackSection() {
   const section = document.getElementById('feedback-section');
   if (!section) return;
   const lastResult = window._oe_lastResult || {};
-  section.innerHTML =
-    '<div class="feedback-title">Was this analysis accurate?</div>' +
-    '<div class="feedback-buttons">' +
-      '<button class="feedback-btn fb-false-positive" id="fb-fp">👎 False Positive</button>' +
-      '<button class="feedback-btn fb-missed-threat" id="fb-mt">🚨 Missed Threat</button>' +
-    '</div>';
+  section.innerHTML = '<div class="feedback-title">Was this analysis accurate?</div><div class="feedback-buttons"><button class="feedback-btn fb-false-positive" id="fb-fp">👎 False Positive</button><button class="feedback-btn fb-missed-threat" id="fb-mt">🚨 Missed Threat</button></div>';
   document.getElementById('fb-fp').addEventListener('click', () => showFeedbackForm('false_positive', lastResult));
   document.getElementById('fb-mt').addEventListener('click', () => showFeedbackForm('missed_threat', lastResult));
 }
