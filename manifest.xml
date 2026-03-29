@@ -5,7 +5,7 @@
            xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
            xsi:type="MailApp">
 
-  <Id>a1ch-outlook-email-evaluator-desktop-001</Id>
+  <Id>3b7e2f1a-4c8d-4e9f-b2a1-6d5c3e7f8b9a</Id>
   <Version>2.0.0.0</Version>
   <ProviderName>a1ch</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -74,7 +74,6 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <SourceLocation resid="Taskpane.Url"/>
-                    <SupportsPinning>true</SupportsPinning>
                   </Action>
                 </Control>
               </Group>
