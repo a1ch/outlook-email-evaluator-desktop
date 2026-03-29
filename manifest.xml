@@ -47,14 +47,12 @@
 
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Requirements>
-      <bt:Sets DefaultMinVersion="1.5">
+      <bt:Sets DefaultMinVersion="1.3">
         <bt:Set Name="Mailbox"/>
       </bt:Sets>
     </Requirements>
     <Hosts>
       <Host xsi:type="MailHost">
-
-        <!-- Desktop -->
         <DesktopFormFactor>
           <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="MessageReadCommandSurface">
@@ -80,29 +78,6 @@
             </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
-
-        <!-- Mobile -->
-        <MobileFormFactor>
-          <ExtensionPoint xsi:type="MobileMessageReadCommandSurface">
-            <Control xsi:type="MobileButton" id="msgReadMobileButton">
-              <Label resid="TaskpaneButton.Label"/>
-              <Icon>
-                <bt:Image size="25" scale="1" resid="Icon.16x16"/>
-                <bt:Image size="32" scale="1" resid="Icon.32x32"/>
-                <bt:Image size="48" scale="1" resid="Icon.32x32"/>
-                <bt:Image size="50" scale="2" resid="Icon.80x80"/>
-                <bt:Image size="64" scale="2" resid="Icon.80x80"/>
-                <bt:Image size="72" scale="2" resid="Icon.80x80"/>
-                <bt:Image size="75" scale="3" resid="Icon.80x80"/>
-                <bt:Image size="96" scale="3" resid="Icon.80x80"/>
-              </Icon>
-              <Action xsi:type="ShowTaskpane">
-                <SourceLocation resid="Taskpane.Url"/>
-              </Action>
-            </Control>
-          </ExtensionPoint>
-        </MobileFormFactor>
-
       </Host>
     </Hosts>
     <Resources>
