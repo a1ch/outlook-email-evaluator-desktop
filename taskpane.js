@@ -62,9 +62,10 @@ function initUI() {
   populateSettings();
 }
 
+const DEFAULT_PROXY_URL = 'https://pikplhvawbhndijpkdbq.supabase.co/functions/v1/analyze-email'
+
 function populateSettings() {
-  document.getElementById('proxy-url-input').value    = storageGet('proxyUrl');
-  document.getElementById('ext-token-input').value    = storageGet('extToken');
+  document.getElementById('proxy-url-input').value    = storageGet('proxyUrl') || DEFAULT_PROXY_URL;
   document.getElementById('tenant-domain-input').value = storageGet('tenantDomain');
   document.getElementById('custom-prompt-input').value = storageGet('customPrompt');
 }
