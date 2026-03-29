@@ -45,6 +45,15 @@ function checkForGiftCardFraud(subject, body) {
 }
 
 function initUI() {
+  // Dark mode toggle
+  const darkBtn = document.getElementById('dark-toggle-btn');
+  if (storageGet('darkMode') === 'true') { document.body.classList.add('dark'); darkBtn.textContent = '☀️'; }
+  darkBtn.addEventListener('click', () => {
+    const isDark = document.body.classList.toggle('dark');
+    darkBtn.textContent = isDark ? '☀️' : '🌙';
+    storageSet('darkMode', isDark ? 'true' : 'false');
+  });
+
   document.getElementById('settings-btn').addEventListener('click', () => {
     const panel = document.getElementById('settings-panel');
     const main  = document.getElementById('main-panel');
