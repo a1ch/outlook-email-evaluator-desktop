@@ -31,19 +31,6 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// --- Gift Card Fraud Detection ---
-const GIFT_CARD_KEYWORDS = [
-  'gift card', 'gift cards', 'itunes card', 'google play card', 'amazon gift card',
-  'steam card', 'ebay gift card', 'visa gift card', 'buy gift cards', 'purchase gift cards',
-  'get gift cards', 'send gift cards', 'gift card number', 'gift card code',
-  'scratch the card', 'scratch card', 'card balance', 'redeem the card',
-  'send me the codes', 'send the codes', 'send the numbers'
-];
-function checkForGiftCardFraud(subject, body) {
-  const combined = ((subject || '') + ' ' + (body || '')).toLowerCase();
-  return GIFT_CARD_KEYWORDS.some(kw => combined.includes(kw));
-}
-
 function initUI() {
   // Dark mode toggle
   const darkBtn = document.getElementById('dark-toggle-btn');
@@ -96,16 +83,6 @@ function loadEmail() {
   const subject = item.subject || '(No subject)';
   document.getElementById('email-subject').textContent =
     subject.length > 70 ? subject.slice(0, 70) + '...' : subject;
-}
-
-const HIGH_RISK_EXT  = ['.htm','.html','.js','.vbs','.vbe','.ps1','.wsf','.wsh','.jar','.hta'];
-const SUSPICIOUS_EXT = ['.exe','.msi','.bat','.cmd','.iso','.img','.zip','.rar','.7z','.docm','.xlsm','.pptm','.lnk'];
-
-function classifyAttachments(attachments) {
-  const names      = attachments.map(a => (a.name || '').toLowerCase());
-  const highRisk   = names.filter(n => HIGH_RISK_EXT.some(e => n.endsWith(e)));
-  const suspicious = names.filter(n => !highRisk.includes(n) && SUSPICIOUS_EXT.some(e => n.endsWith(e)));
-  return { names, highRisk, suspicious };
 }
 
 // --- SafeLinks / URL-wrapper decoder ---
@@ -200,8 +177,7 @@ async function analyzeEmail() {
   const sender      = item.from ? (item.from.displayName + ' <' + item.from.emailAddress + '>') : '(Unknown sender)';
   const subject     = item.subject || '(No subject)';
   const links       = extractLinks(bodyHtml);
-  const attachments = item.attachments || [];
-  const { names: attachNames, highRisk, suspicious } = classifyAttachments(attachments);
+  const attachNames = (item.attachments || []).map(a => (a.name || '').toLowerCase());
   const tenantDomain = storageGet('tenantDomain') || '';
   const customPrompt = storageGet('customPrompt') || '';
 
@@ -223,23 +199,11 @@ async function analyzeEmail() {
     }
   } catch(e) {}
 
-  if (checkForGiftCardFraud(subject, bodyText)) {
-    showResult({
-      verdict: 'PHISHING', phishing_score: 99, spam_score: 10,
-      summary: 'This email contains a request for gift cards. This is one of the most common fraud tactics used against businesses — it is almost certainly a scam.',
-      findings: [{ flag: 'Gift card request detected', explanation: 'Fraudsters impersonate managers, executives, or colleagues and ask employees to buy gift cards urgently. No legitimate business request will ever ask for gift card payments.', howToSpotIt: 'If ANY email asks you to buy gift cards and send the codes — stop immediately. Call that person directly on a known phone number to verify.' }],
-      lesson: 'No legitimate business transaction is ever completed with gift cards. If someone asks you to buy gift cards and send the codes, it is a scam — 100% of the time.',
-      suggested_action: 'Do NOT purchase any gift cards. Report this email to your IT security team and your manager immediately.'
-    }, { subject, links, highRisk, suspicious });
-    return;
-  }
 
   const emailData = {
     subject, sender, senderHasEmail: sender.includes('@'),
     body: bodyText.slice(0, 3000), links,
-    attachments: attachNames, hasHighRiskAttachment: highRisk.length > 0,
-    hasSuspiciousAttachment: suspicious.length > 0, highRiskFiles: highRisk,
-    suspiciousFiles: suspicious, isOutlookExternal, clientTimestamp: new Date().toISOString(),
+    attachments: attachNames, isOutlookExternal, clientTimestamp: new Date().toISOString(),
     clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   };
 
@@ -257,7 +221,7 @@ async function analyzeEmail() {
     }
     const data = await response.json();
     window._oe_lastResult = data.result;
-    showResult(data.result, { subject, links, highRisk, suspicious });
+    showResult(data.result, { subject, links });
   } catch (err) { showError('Request failed: ' + err.message); }
 }
 
@@ -278,7 +242,7 @@ function resetBtn() {
   btn.textContent = '🔍 Analyze Email';
 }
 
-function showResult(result, { subject, links, highRisk, suspicious }) {
+function showResult(result, { subject, links }) {
   window._oe_lastResult = result;
   const vc = { SAFE:'verdict-safe', SUSPICIOUS:'verdict-suspicious', SPAM:'verdict-spam', PHISHING:'verdict-phishing' }[result.verdict] || 'verdict-suspicious';
   const vi = { SAFE:'✅', SUSPICIOUS:'⚠️', SPAM:'🚫', PHISHING:'🎣' }[result.verdict] || '⚠️';
@@ -308,6 +272,8 @@ function showResult(result, { subject, links, highRisk, suspicious }) {
       links.map(l => '<div class="link-item' + (l.mismatch ? ' link-mismatch' : '') + '"><span class="link-display">' + escapeHtml(l.display) + '</span><span class="link-domain">→ ' + escapeHtml(l.href) + (l.mismatch ? ' ⚠️ MISMATCH' : '') + '</span></div>').join('') + '</div>'
     : '';
 
+  const highRisk = result.highRiskFiles || [];
+  const suspicious = result.suspiciousFiles || [];
   const attachWarn = highRisk.length > 0
     ? '<div class="attach-high-risk">⚠️ HIGH RISK ATTACHMENT: ' + escapeHtml(highRisk.join(', ')) + '<br>Do NOT open. Report to IT security immediately.</div>'
     : suspicious.length > 0
