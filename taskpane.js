@@ -1,4 +1,4 @@
-﻿/* Outlook Email Evaluator - Desktop Add-in (taskpane.js) v2.1 */
+/* Clarivise Scan - Desktop Add-in (taskpane.js) v2.1 */
 
 Office.onReady(() => {
   initUI();

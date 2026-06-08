@@ -1,4 +1,4 @@
-﻿# Outlook Email Evaluator - Desktop Add-in
+# Clarivise Scan - Desktop Add-in
 
 AI-powered spam and phishing detection for desktop Outlook (Windows/Mac) and Outlook on the web, using Claude AI.
 
